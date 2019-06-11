@@ -22,8 +22,8 @@ func main() {
 	defer f.Close()
 
 	// Skip MBR
-	var dummy [0x200]byte
-	_, err = f.Read(dummy[:])
+	var mbr [0x200]byte
+	_, err = f.Read(mbr[:])
 
 	if err != nil {
 		fmt.Printf("Couldn't read correctly input file: %v\n", err)
@@ -37,6 +37,8 @@ func main() {
 	}
 
 	cp := t.CreateOtherSideTable()
+
+	// This is depends on the userdata size
 	t.Header.HeaderCopyStartLBA = 0x0747bfff
 	t.Header.LastUsableLBA = 0x0747bfde
 
@@ -63,7 +65,7 @@ func main() {
 
 	fc := &FakeOffset{f: newFile}
 
-	fc.Write(dummy[:])
+	fc.Write(mbr[:])
 
 	if err = t.Write(fc); err != nil {
 		fmt.Printf("Couldn't write new file with error %v\n", err)
@@ -73,7 +75,7 @@ func main() {
 
 	io.Copy(fc, f)
 
-	fc.Write(dummy[:])
+	fc.Write(mbr[:])
 	fc.offset = fc.current
 
 	if err = cp.Write(fc); err != nil {
@@ -83,6 +85,7 @@ func main() {
 	f.Seek(fOffset, 0)
 	io.Copy(fc, f)
 
+	// For Motorola only the 18 first are required
 	for _, p := range t.Partitions[:18] {
 		blFile, err := os.Open(fmt.Sprintf("bootloader/%s.mbn", getName(p.Name())))
 		if err != nil {
@@ -121,6 +124,7 @@ func (f *FakeOffset) Write(p []byte) (n int, err error) {
 
 func getName(parName string) string {
 
+	//Should probably change this to something more generic
 	switch parName {
 	case "sbl1_a", "sbl1_b":
 		return "sbl1"
