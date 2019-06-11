@@ -37,13 +37,19 @@ func main() {
 	}
 
 	cp := t.CreateOtherSideTable()
+	t.Header.HeaderCopyStartLBA = 0x0747bfff
+	t.Header.LastUsableLBA = 0x0747bfde
 
 	//Patch all the partitions to set the _a slots bootable
 
 	for i, p := range t.Partitions {
 		name := p.Name()
 		if name[len(name)-2:] == "_a" {
-			t.Partitions[i].Flags[6] = 0x7f
+			if name == "boot_a"{
+				t.Partitions[i].Flags[6] = 0x6f
+			}else {
+				t.Partitions[i].Flags[6] = 0x7f
+			}
 		} else if name[len(name)-2] == '_' {
 			t.Partitions[i].Flags[6] = 0x3b
 		}
@@ -126,9 +132,9 @@ func getName(parName string) string {
 		return "devcfg"
 	case "aboot_a", "aboot_b":
 		return "emmc_appsboot"
-	case "cmnlib_a","cmnlib_b":
+	case "cmnlib_a", "cmnlib_b":
 		return "cmnlib_30"
-	case "cmnlib64_a","cmnlib64_b":
+	case "cmnlib64_a", "cmnlib64_b":
 		return "cmnlib64_30"
 	case "keymaster_a", "keymaster_b":
 		return "keymaster64"
